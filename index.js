@@ -21,28 +21,34 @@ const conversionFactors = {
     'millimetersToCentimeters': 1 / 10,
     'metersToMillimeters': 1000,
     'millimetersToMeters': 1 / 1000,
-    'kilometersToMillimeters': 1e6,
-    'millimetersToKilometers': 1 / 1e6,
+    'kilometersToMillimeters': 1000000,
+    'millimetersToKilometers': 1 / 1000000,
     'micrometersToMillimeters': 1 / 1000,
     'millimetersToMicrometers': 1000,
-    'nanometersToMillimeters': 1 / 1e6,
-    'millimetersToNanometers': 1e6
+    'nanometersToMillimeters': 1 / 1000000,
+    'millimetersToNanometers': 1000000,
+    'gramsToKilograms': 1 / 1000,
+    'kilogramsToGrams': 1000,
+    'gramsToPounds': 0.00220462,
+    'poundsToGrams': 453.592,
+    'gramsToOunces': 0.035274,
+    'ouncesToGrams': 28.3495
 };
 
 const convertTemperature = (value, type) => {
     switch (type) {
         case 'celsiusToFahrenheit':
-            return (value * 9/5) + 32;
+            return (value * 9 / 5) + 32;
         case 'fahrenheitToCelsius':
-            return (value - 32) * 5/9;
+            return (value - 32) * 5 / 9;
         case 'celsiusToKelvin':
             return value + 273.15;
         case 'kelvinToCelsius':
             return value - 273.15;
         case 'fahrenheitToKelvin':
-            return ((value + 459.67) * 5/9);
+            return ((value + 459.67) * 5 / 9);
         case 'kelvinToFahrenheit':
-            return (value * 9/5) - 459.67;
+            return (value * 9 / 5) - 459.67;
         default:
             return null;
     }
@@ -57,33 +63,84 @@ app.get('/convert', (req, res) => {
         return res.status(400).json({ error: "Invalid unit or value" });
     }
 
-    let result;
     const floatValue = parseFloat(value);
+    let result = {};
 
-    if (
-        unit === 'celsiusToFahrenheit' || unit === 'fahrenheitToCelsius' || 
-        unit === 'celsiusToKelvin' || unit === 'kelvinToCelsius' || 
-        unit === 'fahrenheitToKelvin' || unit === 'kelvinToFahrenheit'
+    if (unit === 'grams') {
+        result['grams'] = floatValue;
+        result['kilograms'] = convertUnit(floatValue, conversionFactors['gramsToKilograms']);
+        result['pounds'] = convertUnit(floatValue, conversionFactors['gramsToPounds']);
+        result['ounces'] = convertUnit(floatValue, conversionFactors['gramsToOunces']);
+    }
+    else if (unit === 'meters' || unit === 'miles' || unit === 'feet' || unit === 'inches' || unit === 'centimeters' || unit === 'millimeters') {
+        if (unit === 'meters') {
+            result['meters'] = floatValue;
+            result['kilometers'] = convertUnit(floatValue, 1 / 1000);
+            result['miles'] = convertUnit(floatValue, 1 / 1609.34);
+            result['feet'] = convertUnit(floatValue, conversionFactors['metersToFeet']);
+            result['inches'] = convertUnit(floatValue, conversionFactors['metersToFeet'] * 12);
+            result['centimeters'] = convertUnit(floatValue, conversionFactors['metersToMillimeters'] / 10);
+            result['millimeters'] = convertUnit(floatValue, conversionFactors['metersToMillimeters']);
+        } else if (unit === 'miles') {
+            result['miles'] = floatValue;
+            const meters = convertUnit(floatValue, conversionFactors['milesToKilometers'] * 1000);
+            result['meters'] = meters;
+            result['feet'] = convertUnit(meters, conversionFactors['metersToFeet']);
+            result['inches'] = convertUnit(meters, conversionFactors['metersToFeet'] * 12);
+            result['centimeters'] = convertUnit(meters, conversionFactors['metersToMillimeters'] / 10);
+            result['millimeters'] = convertUnit(meters, conversionFactors['metersToMillimeters']);
+            result['kilometers'] = convertUnit(floatValue, conversionFactors['milesToKilometers']);
+        } else if (unit === 'feet') {
+            result['feet'] = floatValue;
+            const meters = convertUnit(floatValue, conversionFactors['feetToMeters']);
+            result['meters'] = meters;
+            result['miles'] = convertUnit(meters, conversionFactors['metersToFeet'] * conversionFactors['milesToKilometers']);
+            result['inches'] = convertUnit(floatValue, 12);
+            result['centimeters'] = convertUnit(meters, conversionFactors['metersToMillimeters'] / 10);
+            result['millimeters'] = convertUnit(meters, conversionFactors['metersToMillimeters']);
+            result['kilometers'] = convertUnit(meters, conversionFactors['metersToMillimeters'] / 1000);
+        } else if (unit === 'inches') {
+            result['inches'] = floatValue;
+            const meters = convertUnit(floatValue, conversionFactors['inchesToCentimeters'] / 100);
+            result['meters'] = meters;
+            result['miles'] = convertUnit(meters, conversionFactors['metersToFeet'] * conversionFactors['milesToKilometers']);
+            result['feet'] = convertUnit(floatValue, 1 / 12);
+            result['centimeters'] = convertUnit(meters, conversionFactors['metersToMillimeters'] / 10);
+            result['millimeters'] = convertUnit(meters, conversionFactors['metersToMillimeters']);
+            result['kilometers'] = convertUnit(meters, conversionFactors['metersToMillimeters'] / 1000);
+        } else if (unit === 'centimeters') {
+            result['centimeters'] = floatValue;
+            const meters = convertUnit(floatValue, conversionFactors['centimetersToMillimeters'] / 100);
+            result['meters'] = meters;
+            result['miles'] = convertUnit(meters, conversionFactors['metersToFeet'] * conversionFactors['milesToKilometers']);
+            result['feet'] = convertUnit(meters, conversionFactors['metersToFeet']);
+            result['inches'] = convertUnit(floatValue, conversionFactors['centimetersToInches']);
+            result['millimeters'] = convertUnit(floatValue, conversionFactors['centimetersToMillimeters']);
+            result['kilometers'] = convertUnit(meters, conversionFactors['metersToMillimeters'] / 1000);
+        } else if (unit === 'millimeters') {
+            result['millimeters'] = floatValue;
+            const meters = convertUnit(floatValue, conversionFactors['millimetersToMeters']);
+            result['meters'] = meters;
+            result['miles'] = convertUnit(meters, conversionFactors['metersToFeet'] * conversionFactors['milesToKilometers']);
+            result['feet'] = convertUnit(meters, conversionFactors['metersToFeet']);
+            result['inches'] = convertUnit(meters, conversionFactors['metersToFeet'] * 12);
+            result['centimeters'] = convertUnit(meters, conversionFactors['millimetersToCentimeters']);
+            result['kilometers'] = convertUnit(meters, conversionFactors['metersToMillimeters'] / 1000);
+        }
+    } else if (
+        unit === 'celsiusToFahrenheit' || 
+        unit === 'fahrenheitToCelsius' || 
+        unit === 'celsiusToKelvin' || 
+        unit === 'kelvinToCelsius' || 
+        unit === 'fahrenheitToKelvin' || 
+        unit === 'kelvinToFahrenheit'
     ) {
-        result = convertTemperature(floatValue, unit);
-        if (result === null) {
-            return res.status(400).json({ error: "Invalid temperature conversion" });
-        }
+        result['convertedTemperature'] = convertTemperature(floatValue, unit);
     } else {
-        const factor = conversionFactors[unit];
-        if (!factor) {
-            return res.status(400).json({ error: "Invalid unit type" });
-        }
-        result = convertUnit(floatValue, factor);
+        return res.status(400).json({ error: "Invalid unit type" });
     }
 
-    result = result.toFixed(2);
-
-    res.json({
-        unit,
-        inputValue: value,
-        convertedValue: result
-    });
+    res.json(result);
 });
 
 app.listen(port, () => {
