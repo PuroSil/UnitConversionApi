@@ -2,7 +2,6 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-// Conversion factors for units that can be multiplied directly
 const conversionFactors = {
     'gallonsToLiters': 3.78541,
     'litersToGallons': 1 / 3.78541,
@@ -30,7 +29,6 @@ const conversionFactors = {
     'millimetersToNanometers': 1e6
 };
 
-// Special conversion logic for temperature
 const convertTemperature = (value, type) => {
     switch (type) {
         case 'celsiusToFahrenheit':
@@ -50,10 +48,8 @@ const convertTemperature = (value, type) => {
     }
 };
 
-// General conversion logic
 const convertUnit = (value, factor) => value * factor;
 
-// API routes
 app.get('/convert', (req, res) => {
     const { unit, value } = req.query;
 
@@ -64,7 +60,6 @@ app.get('/convert', (req, res) => {
     let result;
     const floatValue = parseFloat(value);
 
-    // Handle temperature conversion separately
     if (
         unit === 'celsiusToFahrenheit' || unit === 'fahrenheitToCelsius' || 
         unit === 'celsiusToKelvin' || unit === 'kelvinToCelsius' || 
@@ -75,7 +70,6 @@ app.get('/convert', (req, res) => {
             return res.status(400).json({ error: "Invalid temperature conversion" });
         }
     } else {
-        // Handle standard unit conversions
         const factor = conversionFactors[unit];
         if (!factor) {
             return res.status(400).json({ error: "Invalid unit type" });
@@ -83,7 +77,6 @@ app.get('/convert', (req, res) => {
         result = convertUnit(floatValue, factor);
     }
 
-    // Limit result to 2 decimal places
     result = result.toFixed(2);
 
     res.json({
@@ -93,7 +86,6 @@ app.get('/convert', (req, res) => {
     });
 });
 
-// Start the server
 app.listen(port, () => {
     console.log(`Unit Conversion API running on http://localhost:${port}`);
 });
